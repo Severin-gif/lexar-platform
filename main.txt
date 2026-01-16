@@ -1,0 +1,18 @@
+﻿import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // рџ”№ health-check route
+  app.getHttpAdapter().get('/', (req, res) => {
+    res.send({ ok: true, status: 'running' });
+  });
+
+  const PORT = Number(process.env.PORT || 3000);
+  await app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
+}
+bootstrap();
