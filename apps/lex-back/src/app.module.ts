@@ -20,7 +20,7 @@ import { HealthController } from './health.controller';
   imports: [
     // глобальная конфигурация
     ConfigModule.forRoot({
-      isGlobal: true,
+      envFilePath: '.env',
     }),
 
     // JWT конфиг через env
