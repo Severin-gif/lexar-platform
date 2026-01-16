@@ -1,0 +1,18 @@
+﻿# deps / build
+node_modules
+.next
+out
+dist
+
+# vcs
+.git
+.gitignore
+
+# docker / logs
+docker-compose*.yml
+npm-debug.log*
+yarn-error.log*
+
+# env
+.env
+.env.*

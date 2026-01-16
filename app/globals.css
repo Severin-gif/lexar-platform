@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box }
+html, body { padding: 0; margin: 0; font-family: system-ui, Segoe UI, Roboto, Inter, sans-serif }
+
+/* Обрезка цитаты до 2 строк с троеточием */
+.quote-2lines{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;       /* кол-во строк */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  line-height: 1.4;            /* для стабильной высоты */
+  max-height: calc(1.4em * 2); /* fallback для браузеров без -webkit-line-clamp */
+}
