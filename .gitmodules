@@ -1,0 +1,9 @@
+[submodule "apps/lexar-chat"]
+	path = apps/lexar-chat
+	url = git@github.com:Severin-gif/lexar-chat.git
+[submodule "apps/lex-admin"]
+	path = apps/lex-admin
+	url = git@github.com:Severin-gif/lex-admin.git
+[submodule "apps/lex-back"]
+	path = apps/lex-back
+	url = git@github.com:Severin-gif/lex-back.git
