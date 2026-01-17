@@ -1,1 +1,0 @@
-export default function Terms(){ return <main className="p-6">Условия использования</main> }
