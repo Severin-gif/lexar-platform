@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node & npm versions
+        run: |
+          node -v || true
+          npm -v || true
+
+      - name: Setup Node (18)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Show project layout
+        run: |
+          pwd
+          ls -la
+          echo "---- package.json ----"
+          cat package.json || true
+          echo "---- scripts ----"
+          npm pkg get scripts || true
+
+      # npm ci часто падает из-за lock-файла/платформы — ставим install
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Try build (don’t fail on warnings)
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          CI: false
+        run: |
+          if npm run | grep -q " build"; then
+            npm run build
+          else
+            echo "⚠️  В package.json нет скрипта build" && exit 2
+          fi

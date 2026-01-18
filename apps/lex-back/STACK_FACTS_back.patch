@@ -1,0 +1,60 @@
+diff --git a/docs/stack/STACK_FACTS_lex-back.md b/docs/stack/STACK_FACTS_lex-back.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..49687bd684bff4bb7ab0e10beb6dc5a13112a937
+--- /dev/null
++++ b/docs/stack/STACK_FACTS_lex-back.md
+@@ -0,0 +1,54 @@
++# STACK FACTS — lex-back
++
++## Summary
++1) Runtime: Dockerfile builds and runs on Node.js 20 (node:20-alpine).【F:Dockerfile†L1-L18】
++2) Package manager: npm is used (npm ci) with package-lock.json present.【F:Dockerfile†L5-L6】【F:package-lock.json†L1-L12】
++3) Framework: NestJS 11.1.6 is used, with TypeScript 5.9.2 in devDependencies.【F:package.json†L13-L36】
++4) Data: Prisma schema defines PostgreSQL datasource via DATABASE_URL/SHADOW_DATABASE_URL envs.【F:prisma/schema.prisma†L5-L9】
++5) LLM: OpenRouter is used with default model openai/gpt-4o-mini and OpenRouter base URL config.【F:src/llm/llm.provider.ts†L17-L60】
++
++## Component → Technology/version → Where confirmed
++| Component | Technology / version | Where confirmed |
++| --- | --- | --- |
++| Runtime | Node.js 20 (node:20-alpine) | Dockerfile builder/runner images.【F:Dockerfile†L1-L18】 |
++| Package manager | npm (npm ci) + package-lock.json | Dockerfile uses npm ci; lockfile exists.【F:Dockerfile†L5-L6】【F:package-lock.json†L1-L12】 |
++| Backend framework | NestJS ^11.1.6 | @nestjs/* dependencies in package.json.【F:package.json†L13-L28】 |
++| Language | TypeScript ^5.9.2 | devDependencies in package.json.【F:package.json†L33-L36】 |
++| ORM | Prisma ^6.16.2 / @prisma/client ^6.19.0 | dependencies in package.json.【F:package.json†L25-L27】 |
++| Database | PostgreSQL (Prisma datasource provider) | prisma/schema.prisma datasource provider and env URLs.【F:prisma/schema.prisma†L5-L9】 |
++| Auth | JWT via @nestjs/jwt + passport-jwt | dependencies and strategy usage.【F:package.json†L17-L23】【F:src/modules/auth/strategies/jwt.strategy.ts†L1-L33】 |
++| Admin security | API key guard on admin endpoints (x-api-key header) | AdminApiKeyGuard + AdminController guards.【F:src/guards/admin-api-key.guard.ts†L1-L18】【F:src/modules/admin/admin.controller.ts†L1-L15】 |
++| Observability | NestJS Logger used in chat controller/service | Logger usage in ChatController/ChatService.【F:src/modules/chat/chat.controller.ts†L1-L121】【F:src/modules/chat/chat.service.ts†L1-L170】 |
++| LLM provider | OpenRouter (base URL + model openai/gpt-4o-mini) | LlmProvider defaults and env wiring.【F:src/llm/llm.provider.ts†L17-L72】 |
++| Build | tsc build + node dist/main.js (scripts) | package.json scripts build/start.【F:package.json†L7-L12】 |
++| Deploy | Dockerfile builds, runs prisma generate/migrate, and starts app | Dockerfile build/run stages + CMD.【F:Dockerfile†L1-L23】 |
++| Deploy (alt) | infra/entry.sh runs prisma db push then node dist/main.js | infra/entry.sh script.【F:infra/entry.sh†L1-L12】 |
++
++## Env variables used
++- ADMIN_API_KEY (admin API key guard).【F:src/guards/admin-api-key.guard.ts†L6-L12】
++- ADMIN_EMAIL (bootstrap admin email).【F:src/scripts/bootstrapAdmin.ts†L14-L16】
++- ADMIN_PASSWORD (bootstrap admin password).【F:src/scripts/bootstrapAdmin.ts†L15-L17】
++- ADMIN_FORCE_RESET (bootstrap admin password reset flag).【F:src/scripts/bootstrapAdmin.ts†L16-L19】
++- DAILY_MESSAGE_LIMIT (daily message limit).【F:src/modules/chat/chat.service.ts†L207-L217】
++- DATABASE_URL (Prisma datasource).【F:prisma/schema.prisma†L5-L9】
++- SHADOW_DATABASE_URL (Prisma shadow datasource).【F:prisma/schema.prisma†L5-L9】
++- JWT_SECRET (JWT signing/verification).【F:src/modules/auth/auth.service.ts†L84-L98】【F:src/common/jwt.guard.ts†L41-L54】
++- JWT_EXPIRES (JWT expiration).【F:src/modules/auth/auth.service.ts†L85-L93】【F:src/app.module.ts†L30-L44】
++- LLM_TIMEOUT_MS (LLM timeout).【F:src/llm/llm.provider.ts†L47-L60】
++- NODE_ENV (cookie security flag).【F:src/modules/auth/auth.controller.ts†L60-L79】
++- OPENROUTER_BASE (OpenRouter base URL).【F:src/llm/llm.provider.ts†L26-L36】
++- OPENROUTER_KEY (OpenRouter API key).【F:src/llm/llm.provider.ts†L17-L25】
++- OPENROUTER_MODEL (OpenRouter model).【F:src/llm/llm.provider.ts†L31-L39】
++- OPENROUTER_REFERER (OpenRouter HTTP-Referer).【F:src/llm/llm.provider.ts†L36-L45】
++- OPENROUTER_TITLE (OpenRouter X-Title).【F:src/llm/llm.provider.ts†L41-L46】
++- PORT (listening port).【F:src/main.ts†L30-L35】
++
++## Open questions
++- Front/admin framework versions (Next.js/React) are not indicated in package.json dependencies; this repo appears backend-only from dependencies listed.【F:package.json†L1-L36】
++- Email/SMTP integration is not indicated by dependencies (no nodemailer/smtp packages in package.json).【F:package.json†L13-L36】
++- Payments provider/SDK is not indicated by dependencies (no payment SDKs in package.json).【F:package.json†L13-L36】
++- Redis/queue usage is not indicated by dependencies (no redis/bull/bullmq packages in package.json).【F:package.json†L13-L36】
++
++## Diff suggestions
++- Port configuration mismatch: Dockerfile exposes 8080, while the app defaults to PORT=3001 if not set in main.ts.【F:Dockerfile†L21-L22】【F:src/main.ts†L30-L35】
++- Database initialization mismatch: Dockerfile CMD runs prisma migrate deploy, while infra/entry.sh runs prisma db push (different migration strategy).【F:Dockerfile†L23-L23】【F:infra/entry.sh†L8-L10】

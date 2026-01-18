@@ -1,0 +1,300 @@
+﻿Lexar.chat headers dump
+
+===== .\components\SiteHeader.tsx =====
+   1 export default function SiteHeader() {
+   2   return (
+   3     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
+   4       <div className="mx-auto max-w-7xl h-16 px-4 flex items-center justify-between">
+   5         <div className="text-xl font-semibold tracking-tight">Lexar.chat</div>
+   6         <nav className="flex items-center gap-2">
+   7           <a
+   8             href="/about"
+   9             className="px-3 py-1.5 text-sm rounded-xl border bg-white hover:bg-neutral-50"
+  10           >
+  11             Рћ СЃРµСЂРІРёСЃРµ
+  12           </a>
+  13           <button className="px-3 py-1.5 text-sm rounded-xl border bg-white hover:bg-neutral-50">
+  14             Р’РѕР№С‚Рё/Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ
+  15           </button>
+  16         </nav>
+  17       </div>
+  18     </header>
+  19   );
+  20 }
+
+===== .\components\AppHeader.tsx =====
+   1 export default function SiteHeader() {
+   2   return (
+   3     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
+   4       <div className="mx-auto max-w-7xl h-16 px-4 flex items-center justify-between">
+   5         <div className="text-xl font-semibold tracking-tight">Lexar.chat</div>
+   6         <nav className="flex items-center gap-2">
+   7           <a
+   8             href="/about"
+   9             className="px-3 py-1.5 text-sm rounded-xl border bg-white hover:bg-neutral-50"
+  10           >
+  11             Рћ СЃРµСЂРІРёСЃРµ
+  12           </a>
+  13           <button className="px-3 py-1.5 text-sm rounded-xl border bg-white hover:bg-neutral-50">
+  14             Р’РѕР№С‚Рё/Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ
+  15           </button>
+  16         </nav>
+  17       </div>
+  18     </header>
+  19   );
+  20 }
+
+===== .\components\AuthModal.tsx =====
+   1 import { useMemo, useState } from "react"
+   2 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+   3 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+   4 import { Button } from "@/components/ui/button"
+   5 import { Input } from "@/components/ui/input"
+   6 import { Checkbox } from "@/components/ui/checkbox"
+   7 
+   8 // РїСЂРѕСЃС‚Р°СЏ РїСЂРѕРІРµСЂРєР° e-mail
+   9 const isEmail = (v: string) => /^\S+@\S+\.\S+$/.test(v)
+  10 
+  11 export default function AuthModal() {
+  12   const [open, setOpen] = useState(false)
+  13 
+  14   // --- LOGIN ---
+  15   const [lEmail, setLEmail] = useState("")
+  16   const [lPassword, setLPassword] = useState("")
+  17   const [lTouched, setLTouched] = useState<{ email?: boolean; password?: boolean }>({})
+  18   const lErrors = useMemo(() => {
+  19     return {
+  20       email: lTouched.email && !isEmail(lEmail) ? "Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ e-mail" : "",
+  21       password: lTouched.password && lPassword.length < 1 ? "Р’РІРµРґРёС‚Рµ РїР°СЂРѕР»СЊ" : "",
+  22     }
+  23   }, [lEmail, lPassword, lTouched])
+  24   const canLogin = isEmail(lEmail) && lPassword.length > 0
+  25 
+  26   const handleLogin = () => {
+  27     setLTouched({ email: true, password: true })
+  28     if (!canLogin) return
+  29     // TODO: РёРЅС‚РµРіСЂР°С†РёСЏ СЃ Р±РµРєРµРЅРґРѕРј
+  30     console.log("login:", { email: lEmail })
+  31     setOpen(false)
+  32   }
+  33 
+  34   // --- REGISTER ---
+  35   const [rEmail, setREmail] = useState("")
+  36   const [rPassword, setRPassword] = useState("")
+  37   const [rConfirm, setRConfirm] = useState("")
+  38   const [accepted, setAccepted] = useState(false)
+  39   const [rTouched, setRTouched] = useState<{ email?: boolean; password?: boolean; confirm?: boolean; accepted?: boolean }>({})
+  40 
+  41   const rErrors = useMemo(() => {
+  42     const passTooShort = rPassword.length > 0 && rPassword.length < 6
+  43     const passMismatch = rConfirm.length > 0 && rPassword !== rConfirm
+  44     return {
+  45       email: rTouched.email && !isEmail(rEmail) ? "Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ e-mail" : "",
+  46       password:
+  47         rTouched.password && (rPassword.length === 0 ? "РЈРєР°Р¶РёС‚Рµ РїР°СЂРѕР»СЊ" : passTooShort ? "РњРёРЅРёРјСѓРј 6 СЃРёРјРІРѕР»РѕРІ" : ""),
+  48       confirm:
+  49         rTouched.confirm &&
+  50         (rConfirm.length === 0 ? "РџРѕРІС‚РѕСЂРёС‚Рµ РїР°СЂРѕР»СЊ" : passMismatch ? "РџР°СЂРѕР»Рё РЅРµ СЃРѕРІРїР°РґР°СЋС‚" : ""),
+  51       accepted: rTouched.accepted && !accepted ? "РќСѓР¶РЅРѕ СЃРѕРіР»Р°СЃРёРµ СЃ РїСЂР°РІРёР»Р°РјРё" : "",
+  52     }
+  53   }, [rEmail, rPassword, rConfirm, accepted, rTouched])
+  54 
+  55   const canRegister =
+  56     isEmail(rEmail) && rPassword.length >= 6 && rPassword === rConfirm && accepted
+  57 
+  58   const handleRegister = () => {
+  59     setRTouched({ email: true, password: true, confirm: true, accepted: true })
+  60     if (!canRegister) return
+  61     // TODO: РёРЅС‚РµРіСЂР°С†РёСЏ СЃ Р±РµРєРµРЅРґРѕРј
+  62     console.log("register:", { email: rEmail })
+  63     setOpen(false)
+  64   }
+  65 
+  66   // РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РєСЂР°СЃРЅРѕР№ СЂР°РјРєРё
+  67   const invalid = (msg?: string) => (msg ? "border-red-500 focus-visible:ring-red-500" : "")
+  68 
+  69   return (
+  70     <Dialog open={open} onOpenChange={setOpen}>
+  71       <DialogTrigger asChild>
+  72         <Button variant="outline">Р’РѕР№С‚Рё / Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</Button>
+  73       </DialogTrigger>
+  74 
+  75       <DialogContent className="sm:max-w-md">
+  76         <DialogHeader>
+  77           <DialogTitle>Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ</DialogTitle>
+  78         </DialogHeader>
+  79 
+  80         <Tabs defaultValue="login" className="w-full">
+  81           <TabsList className="grid w-full grid-cols-2">
+  82             <TabsTrigger value="login">Р’С…РѕРґ</TabsTrigger>
+  83             <TabsTrigger value="register">Р РµРіРёСЃС‚СЂР°С†РёСЏ</TabsTrigger>
+  84           </TabsList>
+  85 
+  86           {/* LOGIN */}
+  87           <TabsContent value="login" className="space-y-4 mt-4">
+  88             <div className="space-y-1.5">
+  89               <Input
+  90                 type="email"
+  91                 placeholder="E-mail"
+  92                 value={lEmail}
+  93                 onChange={(e) => setLEmail(e.target.value)}
+  94                 onBlur={() => setLTouched((t) => ({ ...t, email: true }))}
+  95                 className={invalid(lErrors.email)}
+  96                 aria-invalid={!!lErrors.email}
+  97                 aria-describedby={lErrors.email ? "login-email-error" : undefined}
+  98               />
+  99               {lErrors.email && (
+ 100                 <p id="login-email-error" className="text-xs text-red-600">{lErrors.email}</p>
+ 101               )}
+ 102             </div>
+ 103 
+ 104             <div className="space-y-1.5">
+ 105               <Input
+ 106                 type="password"
+ 107                 placeholder="РџР°СЂРѕР»СЊ"
+ 108                 value={lPassword}
+ 109                 onChange={(e) => setLPassword(e.target.value)}
+ 110                 onBlur={() => setLTouched((t) => ({ ...t, password: true }))}
+ 111                 className={invalid(lErrors.password)}
+ 112                 aria-invalid={!!lErrors.password}
+ 113                 aria-describedby={lErrors.password ? "login-pass-error" : undefined}
+ 114               />
+ 115               {lErrors.password && (
+ 116                 <p id="login-pass-error" className="text-xs text-red-600">{lErrors.password}</p>
+ 117               )}
+ 118             </div>
+ 119 
+ 120             <Button className="w-full" onClick={handleLogin} disabled={!canLogin}>
+ 121               Р’РѕР№С‚Рё
+ 122             </Button>
+ 123           </TabsContent>
+ 124 
+ 125           {/* REGISTER */}
+ 126           <TabsContent value="register" className="space-y-4 mt-4">
+ 127             <div className="space-y-1.5">
+ 128               <Input
+ 129                 type="email"
+ 130                 placeholder="E-mail"
+ 131                 value={rEmail}
+ 132                 onChange={(e) => setREmail(e.target.value)}
+ 133                 onBlur={() => setRTouched((t) => ({ ...t, email: true }))}
+ 134                 className={invalid(rErrors.email)}
+ 135                 aria-invalid={!!rErrors.email}
+ 136                 aria-describedby={rErrors.email ? "reg-email-error" : undefined}
+ 137               />
+ 138               {rErrors.email && (
+ 139                 <p id="reg-email-error" className="text-xs text-red-600">{rErrors.email}</p>
+ 140               )}
+ 141             </div>
+ 142 
+ 143             <div className="space-y-1.5">
+ 144               <Input
+ 145                 type="password"
+ 146                 placeholder="РџР°СЂРѕР»СЊ (РјРёРЅ. 6 СЃРёРјРІРѕР»РѕРІ)"
+ 147                 value={rPassword}
+ 148                 onChange={(e) => setRPassword(e.target.value)}
+ 149                 onBlur={() => setRTouched((t) => ({ ...t, password: true }))}
+ 150                 className={invalid(rErrors.password)}
+ 151                 aria-invalid={!!rErrors.password}
+ 152                 aria-describedby={rErrors.password ? "reg-pass-error" : undefined}
+ 153               />
+ 154               {rErrors.password && (
+ 155                 <p id="reg-pass-error" className="text-xs text-red-600">{rErrors.password}</p>
+ 156               )}
+ 157             </div>
+ 158 
+ 159             <div className="space-y-1.5">
+ 160               <Input
+ 161                 type="password"
+ 162                 placeholder="РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїР°СЂРѕР»СЊ"
+ 163                 value={rConfirm}
+ 164                 onChange={(e) => setRConfirm(e.target.value)}
+ 165                 onBlur={() => setRTouched((t) => ({ ...t, confirm: true }))}
+ 166                 className={invalid(rErrors.confirm)}
+ 167                 aria-invalid={!!rErrors.confirm}
+ 168                 aria-describedby={rErrors.confirm ? "reg-confirm-error" : undefined}
+ 169               />
+ 170               {rErrors.confirm && (
+ 171                 <p id="reg-confirm-error" className="text-xs text-red-600">{rErrors.confirm}</p>
+ 172               )}
+ 173             </div>
+ 174 
+ 175             <div className="flex items-center justify-between">
+ 176               <div className="flex items-center space-x-2">
+ 177                 <Checkbox
+ 178                   id="rules"
+ 179                   checked={accepted}
+ 180                   onCheckedChange={(val) => setAccepted(Boolean(val))}
+ 181                   onBlur={() => setRTouched((t) => ({ ...t, accepted: true }))}
+ 182                   aria-invalid={!!rErrors.accepted}
+ 183                 />
+ 184                 <label htmlFor="rules" className="text-sm text-muted-foreground">
+ 185                   РЇ РѕР·РЅР°РєРѕРјРёР»СЃСЏ СЃ РїСЂР°РІРёР»Р°РјРё
+ 186                 </label>
+ 187               </div>
+ 188               {rErrors.accepted && (
+ 189                 <p className="text-xs text-red-600">{rErrors.accepted}</p>
+ 190               )}
+ 191             </div>
+ 192 
+ 193             <Button className="w-full" onClick={handleRegister} disabled={!canRegister}>
+ 194               Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ
+ 195             </Button>
+ 196           </TabsContent>
+ 197         </Tabs>
+ 198       </DialogContent>
+ 199     </Dialog>
+ 200   )
+ 201 }
+
+===== .\components\RegisterNudge.tsx =====
+   1 'use client'
+   2 
+   3 import { useEffect, useState } from "react"
+   4 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+   5 import { Button } from "@/components/ui/button"
+   6 import { canShowRegisterNudge, bumpRegisterNudge } from "@/lib/useRegisterNudge"
+   7 
+   8 type Props = {
+   9   openExternally?: boolean
+  10   onRegister?: () => void
+  11   onLater?: () => void
+  12 }
+  13 
+  14 export default function RegisterNudge({ openExternally = false, onRegister, onLater }: Props) {
+  15   const [open, setOpen] = useState(false)
+  16 
+  17   useEffect(() => {
+  18     if (openExternally && canShowRegisterNudge()) {
+  19       setOpen(true)
+  20       bumpRegisterNudge()
+  21     }
+  22   }, [openExternally])
+  23 
+  24   const handleLater = () => {
+  25     setOpen(false)
+  26     onLater?.()
+  27   }
+  28 
+  29   const handleRegister = () => {
+  30     setOpen(false)
+  31     onRegister?.()
+  32   }
+  33 
+  34   return (
+  35     <Dialog open={open} onOpenChange={setOpen}>
+  36       <DialogContent className="sm:max-w-md">
+  37         <DialogHeader>
+  38           <DialogTitle className="text-lg">РЎРѕС…СЂР°РЅРёС‚Рµ РёСЃС‚РѕСЂРёСЋ С‡Р°С‚РѕРІ</DialogTitle>
+  39         </DialogHeader>
+  40         <p className="text-sm text-muted-foreground">
+  41           Р—Р°СЂРµРіРёСЃС‚СЂРёСЂСѓР№С‚РµСЃСЊ, С‡С‚РѕР±С‹ РЅРµ РїРѕС‚РµСЂСЏС‚СЊ РёСЃС‚РѕСЂРёСЋ С‡Р°С‚РѕРІ. Lexar.Chat РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚ СЂРµРєР»Р°РјСѓ РёР»Рё СЂР°СЃСЃС‹Р»РєРё.
+  42         </p>
+  43         <div className="mt-4 grid grid-cols-2 gap-2">
+  44           <Button onClick={handleRegister}>Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</Button>
+  45           <Button variant="outline" onClick={handleLater}>РџРѕР·Р¶Рµ</Button>
+  46         </div>
+  47       </DialogContent>
+  48     </Dialog>
+  49   )
+  50 }

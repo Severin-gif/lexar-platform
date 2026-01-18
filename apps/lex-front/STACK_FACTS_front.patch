@@ -1,0 +1,56 @@
+diff --git a/docs/stack/STACK_FACTS_lexar-chat.md b/docs/stack/STACK_FACTS_lexar-chat.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7eab222e9178859b4aeb156c5101c366f1c88c74
+--- /dev/null
++++ b/docs/stack/STACK_FACTS_lexar-chat.md
+@@ -0,0 +1,50 @@
++# STACK FACTS — lexar-chat
++
++## Summary
++1) Runtime: Dockerfile uses Node.js 18 (node:18-alpine). (Dockerfile:1)
++2) Package manager: npm with package-lock.json present. (package-lock.json:1-4)
++3) Frontend framework: Next.js 14.2.5 with React 18.3.1 and TypeScript 5.9.3. (package.json:23-39)
++4) Build/CI: Dockerfile runs npm ci + npm run build; GitHub Actions CI sets up Node 18 and runs npm install + npm run build. (Dockerfile:11-18, .github/workflows/ci.yml:19-45)
++5) Backend APIs are proxied from Next.js routes to a SERVER_API_URL/NEXT_PUBLIC_SERVER_API_URL backend. (app/api/_config.ts:4-8)
++
++## Stack table
++| Компонент | Технология/версия | Где подтверждено (файл/путь) |
++| --- | --- | --- |
++| Runtime (container) | Node.js 18 (node:18-alpine) | Dockerfile:1 |
++| Package manager | npm lockfile (package-lock.json) | package-lock.json:1-4 |
++| Frontend framework | Next.js 14.2.5 | package.json:23 |
++| UI library | React 18.3.1 / react-dom 18.3.1 | package.json:25-26 |
++| Type system | TypeScript 5.9.3 | package.json:39 |
++| CI | GitHub Actions CI workflow (setup-node node-version: 18) | .github/workflows/ci.yml:19-23 |
++| Build command | next build (npm run build) | package.json:7 |
++| Start command | next start (npm run start) | package.json:8 |
++| Container build | npm ci + npm run build | Dockerfile:11-18 |
++| Backend API proxy base | SERVER_API_URL / NEXT_PUBLIC_SERVER_API_URL / NEXT_PUBLIC_API_URL fallbacks | app/api/_config.ts:4-8 |
++| Auth token handling (frontend) | access token stored in localStorage; Authorization: Bearer header | lib/authClient.ts:21-33,115-121,156-158 |
++| Auth cookie (frontend API) | access_token set as httpOnly cookie (7 days) | app/api/auth/login/route.ts:45-52 |
++
++## Env variables used
++- NODE_ENV (runtime mode checks) — server.js:5; app/api/auth/me/route.ts:67
++- PORT (server port) — server.js:10
++- HOST (server host) — server.js:11
++- NEXT_PUBLIC_CLIENT_API_URL — lib/authClient.ts:7-9
++- NEXT_PUBLIC_API_URL — lib/authClient.ts:8-10; lib/useAuthClient.ts:17-18; app/api/_config.ts:5-7
++- NEXT_PUBLIC_ADMIN_URL — lib/chat/logChat.ts:1
++- NEXT_PUBLIC_VIP_SUPPORT_URL — components/chat/registered/account/AccountModal.tsx:165-167
++- NEXT_PUBLIC_SERVER_API_URL — app/api/_config.ts:5-7; app/api/billing/plans/route.ts:4-6; app/api/auth/login/route.ts:4-5; app/api/auth/me/route.ts:3-6
++- SERVER_API_URL — app/api/_config.ts:4-7; app/api/billing/plans/route.ts:3-6; app/api/auth/me/route.ts:3-6
++
++## Open questions
++- Backend framework (NestJS) version: no @nestjs/* dependencies listed. (package.json:11-39)
++- PostgreSQL usage: no prisma/pg-related dependencies listed. (package.json:11-39)
++- Redis usage: no redis-related dependencies listed. (package.json:11-39)
++- Queues/cache (BullMQ/Throttler/etc.): no queue-related dependencies listed. (package.json:11-39)
++- Email (SMTP/Nodemailer): no nodemailer-related dependencies listed. (package.json:11-39)
++- Payments provider/webhooks: payment provider not specified; billing is proxied to backend /billing/plans. (app/api/billing/plans/route.ts:12-50)
++- Observability (Sentry/Winston/Pino): no observability SDK dependencies listed. (package.json:11-39)
++- LLM provider/models: no LLM SDK dependencies listed. (package.json:11-39)
++- Admin security (RBAC/JWT/API key): only admin log endpoint URL is referenced; security mechanism not specified here. (lib/chat/logChat.ts:1-13)
++
++## Diff suggestions
++- Dependency install differs between Dockerfile (npm ci) and CI workflow (npm install). (Dockerfile:11, .github/workflows/ci.yml:35-36)
++- Backend base URL fallbacks differ: app/api/_config.ts uses SERVER_API_URL/NEXT_PUBLIC_SERVER_API_URL/NEXT_PUBLIC_API_URL; app/api/auth/login/route.ts only uses NEXT_PUBLIC_SERVER_API_URL. (app/api/_config.ts:4-7; app/api/auth/login/route.ts:4-5)

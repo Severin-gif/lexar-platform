@@ -1,0 +1,48 @@
+diff --git a/docs/stack/STACK_FACTS_lex-admin.md b/docs/stack/STACK_FACTS_lex-admin.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..92c5c12856224c55ce059abe50f5f2fd0a7b5d35
+--- /dev/null
++++ b/docs/stack/STACK_FACTS_lex-admin.md
+@@ -0,0 +1,42 @@
++# STACK_FACTS_lex-admin
++
++## Summary
++1. Frontend/admin is built with Next.js 14.2.3 and React 18.2.0 (dependencies in package.json). (package.json:L15-L18)
++2. TypeScript 5.4.5 is included in devDependencies for the project. (package.json:L20-L30)
++3. Runtime container uses Node.js 18 (node:18-alpine) and builds/starts via npm scripts in Dockerfile. (Dockerfile:L1-L15)
++4. Package manager is npm with a package-lock.json lockfile, and Docker build uses `npm ci`. (package-lock.json:L1-L5, Dockerfile:L7-L9)
++5. Admin access is guarded by a `lex_admin_token` cookie and upstream admin requests include an `x-api-key` header from ADMIN_API_KEY. (middleware.ts:L13-L36, lib/adminProxy.ts:L10-L48)
++
++## Stack facts table
++
++| Компонент | Технология/версия | Где подтверждено (файл/путь) |
++| --- | --- | --- |
++| Runtime | Node.js 18 (node:18-alpine base image) | Dockerfile:L1 |
++| Package manager | npm (lockfile: package-lock.json, npm ci in Dockerfile) | package-lock.json:L1-L5; Dockerfile:L7-L9 |
++| Front/Admin framework | Next.js 14.2.3 | package.json:L15 |
++| Front/Admin framework | React 18.2.0 / React DOM 18.2.0 | package.json:L16-L17 |
++| Language | TypeScript 5.4.5 | package.json:L20-L30 |
++| Build/Start scripts | next dev / next build / next start / next lint | package.json:L5-L9 |
++| Docker build | npm ci --include=dev; npm run build; npm start | Dockerfile:L7-L15 |
++| Auth (cookie) | `lex_admin_token` cookie checked in middleware | middleware.ts:L13-L36 |
++| Auth (token use) | Bearer token from `lex_admin_token` used for /auth/me | app/api/auth/me/route.ts:L12-L23 |
++| Admin security (API key) | Admin proxy adds `x-api-key` from ADMIN_API_KEY | lib/adminProxy.ts:L10-L48 |
++
++## Env variables used
++- LEX_BACKEND_URL (backend base URL used by admin proxy and auth routes). (lib/env.server.ts:L3-L5, app/api/auth/login/route.ts:L7-L23)
++- ADMIN_API_KEY (API key passed as x-api-key in admin proxy). (lib/env.server.ts:L7-L8, lib/adminProxy.ts:L10-L48)
++- NODE_ENV (used to set secure cookie flag in auth login route). (app/api/auth/login/route.ts:L60-L66)
++
++## Open questions
++- PostgreSQL usage is not evidenced in the repo (no prisma schema or postgres-related config found). (package.json:L1-L31)
++- Redis usage is not evidenced in the repo (no redis-related dependencies or config found). (package.json:L1-L31)
++- Queue/caching libraries (BullMQ/Throttler) are not evidenced in the repo dependencies. (package.json:L1-L31)
++- Email/SMTP libraries are not evidenced in the repo dependencies. (package.json:L1-L31)
++- Payment providers/webhooks/SDKs are not evidenced in the repo dependencies. (package.json:L1-L31)
++- Observability libraries (Sentry/Pino/Winston) are not evidenced in the repo dependencies. (package.json:L1-L31)
++- LLM providers/models are not evidenced in the repo dependencies or config. (package.json:L1-L31)
++- CI pipeline is not evidenced in repository paths (no .github/workflows directory present). (path: .github/workflows)
++- NestJS backend usage is not evidenced in the repo dependencies. (package.json:L1-L31)
++
++## Diff suggestions
++- No mismatches between the reviewed configuration files were found.
