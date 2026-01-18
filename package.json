@@ -3,8 +3,19 @@
   "private": true,
   "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "dev:back": "pnpm --filter backend dev",
-    "dev:chat": "pnpm --filter chat dev",
-    "dev:admin": "pnpm --filter admin dev"
+    "dev:back": "pnpm --filter ./apps/lex-back dev",
+    "dev:front": "pnpm --filter ./apps/lex-front dev",
+    "dev:admin": "pnpm --filter ./apps/lex-admin dev",
+
+    "build:back": "pnpm --filter ./apps/lex-back build",
+    "build:front": "pnpm --filter ./apps/lex-front build",
+    "build:admin": "pnpm --filter ./apps/lex-admin build",
+
+    "start:back": "pnpm --filter ./apps/lex-back start",
+    "start:front": "pnpm --filter ./apps/lex-front start",
+    "start:admin": "pnpm --filter ./apps/lex-admin start",
+
+    "install:all": "pnpm -r install",
+    "build:all": "pnpm -r build"
   }
 }
