@@ -1,38 +1,34 @@
- # syntax=docker/dockerfile:1
- 
- FROM node:20-alpine AS base
- WORKDIR /app
- RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
- 
- FROM base AS deps
- COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
- COPY apps/lex-front/package.json apps/lex-front/package.json
- COPY apps/lex-admin/package.json apps/lex-admin/package.json
- COPY apps/lex-back/package.json apps/lex-back/package.json
- COPY packages/*/package.json packages/*/package.json
- RUN pnpm install --frozen-lockfile --prod=false
- 
- FROM base AS build
- ARG APP_SCOPE=lexar-front
- ENV APP_SCOPE=$APP_SCOPE
- COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps ./apps
-COPY --from=deps /app/packages ./packages
- COPY . .
- RUN pnpm --filter "$APP_SCOPE" build
- 
- FROM node:20-alpine AS runtime
- WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
- ENV NODE_ENV=production
- ARG APP_SCOPE=lexar-front
- ENV APP_SCOPE=$APP_SCOPE
- 
- COPY --from=deps /app/node_modules ./node_modules
- COPY --from=deps /app/apps ./apps
- COPY --from=deps /app/packages ./packages
- COPY --from=build /app/package.json ./package.json
- COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+# -------- deps --------
+FROM node:20-alpine AS deps
+WORKDIR /app
 
-  EXPOSE 3000
- CMD ["sh", "-lc", "pnpm --filter \"$APP_SCOPE\" start"]
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
+COPY apps/lex-front/package.json apps/lex-front/package.json
+
+RUN pnpm install --frozen-lockfile --prod=false
+
+# -------- build --------
+FROM node:20-alpine AS build
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+WORKDIR /app/apps/lex-front
+RUN pnpm build
+
+# -------- runtime --------
+FROM node:20-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY --from=build /app/apps/lex-front ./
+
+EXPOSE 3000
+CMD ["pnpm", "start"]
