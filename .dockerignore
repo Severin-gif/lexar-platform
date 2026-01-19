@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/.cache
+**/*.log
+
+.env
+.env.*
+.git
+.vscode
+.DS_Store
