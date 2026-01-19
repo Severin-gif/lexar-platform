@@ -6,6 +6,9 @@
     "dev:back": "pnpm --filter ./apps/lex-back dev",
     "dev:front": "pnpm --filter ./apps/lex-front dev",
     "dev:admin": "pnpm --filter ./apps/lex-admin dev",
+    "dev": "pnpm --filter lexar-front dev",
+    "build": "pnpm --filter lexar-front build",
+    "start": "pnpm --filter lexar-front start",
 
     "build:back": "pnpm --filter ./apps/lex-back build",
     "build:front": "pnpm --filter ./apps/lex-front build",
