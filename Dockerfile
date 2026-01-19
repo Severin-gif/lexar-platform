@@ -18,8 +18,8 @@ RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-WORKDIR /app/apps/lex-front
-RUN pnpm build
+# КЛЮЧЕВОЙ МОМЕНТ
+RUN pnpm --filter lex-front build
 
 # -------- runtime --------
 FROM node:20-alpine AS runtime
