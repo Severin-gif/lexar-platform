@@ -17,7 +17,7 @@ ENV APP_SCOPE=$APP_SCOPE
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN echo "APP_SCOPE=$APP_SCOPE" && pnpm -r list --depth -1
-RUN pnpm --filter "$APP_SCOPE" build
+RUN pnpm --filter "$APP_SCOPE" exec next build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
