@@ -15,6 +15,7 @@ FROM base AS build
 ARG APP_SCOPE=lexar-front
 ENV APP_SCOPE=$APP_SCOPE
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps ./apps
 COPY . .
 RUN echo "APP_SCOPE=$APP_SCOPE" && pnpm -r list --depth -1
 RUN pnpm --filter "$APP_SCOPE" exec next build
