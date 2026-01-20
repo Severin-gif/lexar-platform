@@ -31,7 +31,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=build /app/apps ./apps
-COPY --from=build /app/packages ./packages
 
 EXPOSE 3000
 CMD ["sh", "-lc", "echo \"Starting $APP_SCOPE\" && pnpm --filter \"$APP_SCOPE\" start"]
