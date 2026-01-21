@@ -13,10 +13,6 @@ COPY apps/lex-front/package.json apps/lex-front/package.json
 COPY apps/lex-admin/package.json apps/lex-admin/package.json
 COPY apps/lex-back/package.json  apps/lex-back/package.json
 
-# packages manifests (если есть shared libs)
-# не сломает сборку, даже если packages пустой — но папка должна существовать
-COPY packages ./packages
-
 # Ставим все зависимости (prod=false нужен для build-стадий)
 RUN pnpm install --frozen-lockfile --prod=false
 
