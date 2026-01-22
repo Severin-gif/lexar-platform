@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const SERVER_API_URL =
-  process.env.SERVER_API_URL ??
-  process.env.NEXT_PUBLIC_SERVER_API_URL ??
-  "https://api.lexai-chat.com";
+import { makeBackendUrl } from "../../_config";
 
 const PLAN_LABELS = {
   free: "FREE",
@@ -81,7 +77,7 @@ export async function GET(req: NextRequest) {
       headers.authorization = `Bearer ${accessToken}`;
     }
 
-    const backendRes = await fetch(`${SERVER_API_URL}/auth/me`, {
+    const backendRes = await fetch(makeBackendUrl("/auth/me"), {
       method: "GET",
       headers,
       // credentials тут не нужен — это server-side fetch
