@@ -1,14 +1,12 @@
 // app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
-
-const SERVER_API_URL =
-  process.env.NEXT_PUBLIC_SERVER_API_URL ?? "https://api.lexai-chat.com";
+import { makeBackendUrl } from "../../_config";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const backendRes = await fetch(`${SERVER_API_URL}/auth/login`, {
+    const backendRes = await fetch(makeBackendUrl("/auth/login"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

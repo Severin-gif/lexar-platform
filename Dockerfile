@@ -23,7 +23,7 @@ COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=deps /app/package.json ./package.json
 # КРИТИЧНО: копируем весь репозиторий, чтобы packages/ точно существовал
 COPY . .
-RUN pnpm --filter "$APP_SCOPE" exec next build
+RUN pnpm --filter "$APP_SCOPE" run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
