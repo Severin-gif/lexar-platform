@@ -2,41 +2,91 @@
 
 FROM node:20-alpine AS base
 WORKDIR /app
+
+# Важно для некоторых зависимостей (особенно Next/шрифты/сборки на alpine)
+RUN apk add --no-cache libc6-compat
+
+# pnpm через corepack
 RUN corepack enable
 
+# Единый store для кеша между стадиями
+ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_PATH="/pnpm-store"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN pnpm config set store-dir "$PNPM_STORE_PATH"
+
+# ----------------------------
+# deps: скачиваем зависимости в store (без исходников)
+# ----------------------------
 FROM base AS deps
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Манифесты приложений (нужны pnpm для корректного разрешения workspace)
 COPY apps/lex-front/package.json apps/lex-front/package.json
 COPY apps/lex-admin/package.json apps/lex-admin/package.json
 COPY apps/lex-back/package.json apps/lex-back/package.json
-# ВАЖНО: если у тебя есть workspace-пакеты — их манифесты тоже нужны для корректной установки
-# (если папка packages есть, но пакеты там не используются — строка не навредит)
-COPY packages/*/package.json packages/*/package.json
-RUN pnpm install --frozen-lockfile --prod=false
 
+# workspace packages (если есть)
+COPY packages/*/package.json packages/*/package.json
+
+# Скачиваем всё в store (быстро, кешируется)
+RUN pnpm fetch
+
+# ----------------------------
+# build: копируем исходники и ставим зависимости оффлайн, затем build
+# ----------------------------
 FROM base AS build
 ARG APP_SCOPE=lexar-front
 ENV APP_SCOPE=$APP_SCOPE
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=deps /app/package.json ./package.json
-# КРИТИЧНО: копируем весь репозиторий, чтобы packages/ точно существовал
+
+# Подтягиваем store из deps
+COPY --from=deps /pnpm-store /pnpm-store
+
+# Копируем весь репозиторий
 COPY . .
+
+# Ставим зависимости оффлайн (строго по lock)
+# Это ключевой фикс: гарантирует, что next реально установлен и доступен
+RUN pnpm install --offline --frozen-lockfile --prod=false
+
+# Сборка выбранного приложения
 RUN pnpm --filter "$APP_SCOPE" run build
 
+# ----------------------------
+# runtime: только prod deps + исходники/артефакты, старт через pnpm filter
+# ----------------------------
 FROM node:20-alpine AS runtime
 WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
 RUN corepack enable
+
 ENV NODE_ENV=production
+ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_PATH="/pnpm-store"
+ENV PATH="$PNPM_HOME:$PATH"
+
 ARG APP_SCOPE=lexar-front
 ENV APP_SCOPE=$APP_SCOPE
 
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=build /app/apps ./apps
-COPY --from=build /app/packages ./packages
+RUN pnpm config set store-dir "$PNPM_STORE_PATH"
+
+# store нужен, чтобы поставить prod deps оффлайн
+COPY --from=deps /pnpm-store /pnpm-store
+
+# минимально нужные файлы монорепы
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps ./apps
+COPY packages ./packages
+
+# Ставим только прод-зависимости для выбранного приложения
+RUN pnpm install --offline --frozen-lockfile --prod --filter "$APP_SCOPE"...
+
+# Чистим store, чтобы уменьшить образ (опционально, но полезно)
+RUN rm -rf /pnpm-store
 
 EXPOSE 3000
+
 CMD ["sh", "-lc", "pnpm --filter \"$APP_SCOPE\" start"]
