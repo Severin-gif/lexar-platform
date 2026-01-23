@@ -22,7 +22,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/platform-socket.io": "^11.1.6",
     "@nestjs/websockets": "^11.1.6",
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
@@ -33,7 +33,6 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
-    "prisma": "^6.16.2",
     "socket.io": "^4.8.3",
     "ws": "^8.18.3"
   },
@@ -46,6 +45,7 @@
     "@types/node": "^24.5.2",
     "@types/socket.io": "^3.0.2",
     "nodemon": "^3.1.10",
+    "prisma": "^6.19.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

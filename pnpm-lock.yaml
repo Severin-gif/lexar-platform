@@ -90,7 +90,7 @@ importers:
         specifier: ^11.1.6
         version: 11.1.12(@nestjs/common@11.1.12(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.12)(@nestjs/platform-socket.io@11.1.12)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@prisma/client':
-        specifier: ^6.19.0
+        specifier: ^6.19.2
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       bcrypt:
         specifier: ^6.0.0
@@ -122,9 +122,6 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.17.1
-      prisma:
-        specifier: ^6.16.2
-        version: 6.19.2(typescript@5.9.3)
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
@@ -156,6 +153,9 @@ importers:
       nodemon:
         specifier: ^3.1.10
         version: 3.1.11
+      prisma:
+        specifier: ^6.19.2
+        version: 6.19.2(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.10.9)(typescript@5.9.3)

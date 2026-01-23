@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -15,42 +15,23 @@ model User {
   name         String?
   role         UserRole @default(USER)
   tariff       String   @default("FREE")
-  plan         String   @default("free")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  ApiKey       ApiKey[]
-  chats        Chat[]
-}
 
-model Chat {
-  id        String    @id @default(cuid())
-  userId    String
-  title     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id])
-  messages  Message[]
+  messages     Message[]
 }
 
 model Message {
   id        String   @id @default(cuid())
-  chatId    String
+  userId    String?
   role      MsgRole
   content   String
-  tokensIn  Int      @default(0)
-  tokensOut Int      @default(0)
   createdAt DateTime @default(now())
-  chat      Chat     @relation(fields: [chatId], references: [id])
-}
 
-model ApiKey {
-  id        String   @id
-  key       String   @unique
-  ownerId   String
-  label     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  User      User     @relation(fields: [ownerId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum UserRole {
