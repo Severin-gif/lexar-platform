@@ -84,7 +84,8 @@ COPY packages ./packages
 # Ставим только прод-зависимости для выбранного приложения
 RUN pnpm install --offline --frozen-lockfile --prod \
   --filter "lexar-front"... \
-  --filter "lexar-admin"...
+  --filter "lex-admin"... \
+  --filter "lex-back"...
 
 # Артефакты сборки Next.js должны быть в runtime, иначе next start упадёт
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
