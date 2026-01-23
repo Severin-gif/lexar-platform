@@ -51,7 +51,8 @@ COPY . .
 RUN pnpm install --offline --frozen-lockfile --prod=false
 
 # Сборка выбранного приложения (делает apps/lex-front/.next)
-RUN pnpm --filter "$APP_SCOPE" run build
+RUN pnpm --filter "lexar-front" run build \
+&& pnpm --filter "lexar-admin" run build
 
 # ----------------------------
 # runtime: только prod deps + исходники/артефакты, старт через pnpm filter
@@ -81,7 +82,13 @@ COPY apps ./apps
 COPY packages ./packages
 
 # Ставим только прод-зависимости для выбранного приложения
-RUN pnpm install --offline --frozen-lockfile --prod --filter "$APP_SCOPE"...
+RUN pnpm install --offline --frozen-lockfile --prod \
+  --filter "lexar-front"... \
+  --filter "lexar-admin"...
+
+# Артефакты сборки Next.js должны быть в runtime, иначе next start упадёт
+COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
+COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
 
 # ✅ КЛЮЧЕВОЙ ФИКС: переносим артефакты сборки Next.js в runtime
 # Сейчас деплой падает потому что в runtime нет apps/lex-front/.next
@@ -92,4 +99,15 @@ RUN rm -rf /pnpm-store
 
 EXPOSE 3000
 
-CMD ["sh", "-lc", "pnpm --filter \"$APP_SCOPE\" start"]
+CMD ["sh", "-lc", "\
+if [ -n \"$APP_SCOPE\" ]; then \
+  echo \"Starting by APP_SCOPE=$APP_SCOPE\"; \
+  pnpm --filter \"$APP_SCOPE\" start; \
+elif [ -n \"$APP_PATH\" ]; then \
+  echo \"Starting by APP_PATH=$APP_PATH\"; \
+  pnpm --filter \"./$APP_PATH\" start; \
+else \
+  echo \"No APP_SCOPE/APP_PATH provided, fallback to lexar-front\"; \
+  pnpm --filter \"lexar-front\" start; \
+fi \
+"]
