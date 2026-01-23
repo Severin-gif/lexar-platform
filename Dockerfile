@@ -48,10 +48,9 @@ COPY --from=deps /pnpm-store /pnpm-store
 COPY . .
 
 # Ставим зависимости оффлайн (строго по lock)
-# Это ключевой фикс: гарантирует, что next реально установлен и доступен
 RUN pnpm install --offline --frozen-lockfile --prod=false
 
-# Сборка выбранного приложения
+# Сборка выбранного приложения (делает apps/lex-front/.next)
 RUN pnpm --filter "$APP_SCOPE" run build
 
 # ----------------------------
@@ -84,7 +83,11 @@ COPY packages ./packages
 # Ставим только прод-зависимости для выбранного приложения
 RUN pnpm install --offline --frozen-lockfile --prod --filter "$APP_SCOPE"...
 
-# Чистим store, чтобы уменьшить образ (опционально, но полезно)
+# ✅ КЛЮЧЕВОЙ ФИКС: переносим артефакты сборки Next.js в runtime
+# Сейчас деплой падает потому что в runtime нет apps/lex-front/.next
+COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
+
+# Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
 
 EXPOSE 3000
