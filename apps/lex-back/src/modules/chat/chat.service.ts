@@ -216,14 +216,14 @@ export class ChatService {
   private async getUserTariff(userId: string): Promise<Tariff> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true },
+      select: { tariff: true },
     });
 
-    return this.normalizePlanToTariff(user?.plan);
+    return this.normalizeTariff(user?.tariff);
   }
 
-  private normalizePlanToTariff(plan?: string | null): Tariff {
-    const normalized = (plan ?? 'free').toLowerCase();
+  private normalizeTariff(tariff?: string | null): Tariff {
+    const normalized = (tariff ?? 'free').toLowerCase();
     switch (normalized) {
       case 'vip':
         return TARIFF.VIP;
