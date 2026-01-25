@@ -1,6 +1,8 @@
 // lib/authClient.ts
 'use client';
 
+import { normalizePublicUrl } from './url';
+
 // Базовый URL для клиентских запросов.
 // В проде: NEXT_PUBLIC_CLIENT_API_URL = "/api".
 // Если переменной нет, по умолчанию тоже "/api".
@@ -9,7 +11,7 @@ const RAW_API_BASE =
   process.env.NEXT_PUBLIC_API_URL ??
   '/api';
 
-const API_BASE = RAW_API_BASE.replace(/\/$/, '');
+const API_BASE = normalizePublicUrl(RAW_API_BASE);
 const isBrowser = typeof window !== 'undefined';
 
 export type AuthUser = {
