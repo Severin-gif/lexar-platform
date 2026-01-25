@@ -50,6 +50,9 @@ COPY . .
 # Ставим зависимости оффлайн (строго по lock)
 RUN pnpm install --offline --frozen-lockfile --prod=false
 
+# Чистим старые артефакты Next.js, чтобы исключить рассинхрон HTML/статик
+RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
+
 # Сборка выбранного приложения (делает apps/lex-front/.next)
 RUN pnpm --filter "lexar-front" run build \
 && pnpm --filter "lex-admin" run build
@@ -90,10 +93,6 @@ RUN pnpm install --offline --frozen-lockfile --prod \
 # Артефакты сборки Next.js должны быть в runtime, иначе next start упадёт
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
-
-# ✅ КЛЮЧЕВОЙ ФИКС: переносим артефакты сборки Next.js в runtime
-# Сейчас деплой падает потому что в runtime нет apps/lex-front/.next
-COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
