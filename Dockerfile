@@ -56,6 +56,9 @@ RUN pnpm install --offline --frozen-lockfile --prod=false
 # Чистим старые артефакты Next.js, чтобы исключить рассинхрон HTML/статик
 RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
 
+# Явно генерируем Prisma client для backend (не полагаемся на postinstall)
+RUN pnpm --filter "lexar-backend" prisma:generate
+
 # Сборка выбранного приложения (делает apps/lex-front/.next)
 RUN pnpm --filter "lexar-front" run build \
 && pnpm --filter "lex-admin" run build \

@@ -15,6 +15,7 @@ model User {
   name         String?
   role         UserRole @default(USER)
   tariff       String   @default("FREE")
+  plan         String   @default("free")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
