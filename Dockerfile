@@ -55,7 +55,8 @@ RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
 
 # Сборка выбранного приложения (делает apps/lex-front/.next)
 RUN pnpm --filter "lexar-front" run build \
-&& pnpm --filter "lex-admin" run build
+&& pnpm --filter "lex-admin" run build \
+&& pnpm --filter "lexar-backend" run build
 
 # ----------------------------
 # runtime: только prod deps + исходники/артефакты, старт через pnpm filter
@@ -93,6 +94,7 @@ RUN pnpm install --offline --frozen-lockfile --prod \
 # Артефакты сборки Next.js должны быть в runtime, иначе next start упадёт
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
+COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
 
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
