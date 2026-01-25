@@ -98,7 +98,7 @@ COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
 
-EXPOSE 3000
+EXPOSE 3000 3001
 
 CMD ["sh", "-lc", "\
 if [ -n \"$APP_SCOPE\" ]; then \
