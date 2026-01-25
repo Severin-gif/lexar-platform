@@ -21,13 +21,14 @@ function resolveNextBin() {
   );
 }
 
-const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+const port = Number(process.env.PORT) || 3001;
+const host = process.env.HOST || "0.0.0.0";
 const nextBin = resolveNextBin();
 
 // Запускаем next через node, чтобы не зависеть от .bin/командной строки и не ловить spawn EINVAL на Windows.
 const child = spawn(
   process.execPath,
-  [nextBin, "start", "-p", String(port)],
+  [nextBin, "start", "-H", host, "-p", String(port)],
   { stdio: "inherit" }
 );
 
