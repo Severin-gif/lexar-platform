@@ -9,6 +9,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
+      "https://test.lexai-chat.com",
       "https://lexai-chat.com",
       "https://www.lexai-chat.com",
       "https://admin.lexai-chat.com",

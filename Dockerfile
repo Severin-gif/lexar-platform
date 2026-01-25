@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 WORKDIR /app
 
-# Важно для некоторых зависимостей (особенно Next/шрифты/сборки на alpine)
-RUN apk add --no-cache libc6-compat
+# Базовые зависимости для node/gyp и TLS
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
 
 # pnpm через corepack
 RUN corepack enable
@@ -13,6 +15,7 @@ RUN corepack enable
 ENV PNPM_HOME="/pnpm"
 ENV PNPM_STORE_PATH="/pnpm-store"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV NPM_CONFIG_OPTIONAL=1
 
 RUN pnpm config set store-dir "$PNPM_STORE_PATH"
 
@@ -61,16 +64,19 @@ RUN pnpm --filter "lexar-front" run build \
 # ----------------------------
 # runtime: только prod deps + исходники/артефакты, старт через pnpm filter
 # ----------------------------
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 WORKDIR /app
 
-RUN apk add --no-cache libc6-compat
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PNPM_STORE_PATH="/pnpm-store"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV NPM_CONFIG_OPTIONAL=1
 
 ARG APP_SCOPE=lexar-front
 ENV APP_SCOPE=$APP_SCOPE
