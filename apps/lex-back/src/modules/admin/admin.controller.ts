@@ -21,8 +21,8 @@ export class AdminController {
     const where = trimmedSearch
       ? {
           OR: [
-            { email: { contains: trimmedSearch, mode: 'insensitive' } },
-            ...(this.isLikelyId(trimmedSearch) ? [{ id: trimmedSearch }] : []),
+           { email: { contains: trimmedSearch, mode: Prisma.QueryMode.insensitive } },
+           ...(this.isLikelyId(trimmedSearch) ? [{ id: trimmedSearch }] : []),
           ],
         }
       : undefined;
