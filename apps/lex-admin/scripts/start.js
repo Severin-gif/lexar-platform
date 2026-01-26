@@ -21,15 +21,12 @@ function parsePort(raw, fallback) {
 }
 
 function resolveNextBin() {
-  // 1) локальный node_modules приложения
   const local = path.join(__dirname, "..", "node_modules", "next", "dist", "bin", "next");
   if (fs.existsSync(local)) return local;
 
-  // 2) корневой node_modules монорепы (на случай hoist)
   const root = path.join(__dirname, "..", "..", "..", "node_modules", "next", "dist", "bin", "next");
   if (fs.existsSync(root)) return root;
 
-  // 3) fallback: попытка относительного пути (если структура иная)
   const alt = path.join(process.cwd(), "node_modules", "next", "dist", "bin", "next");
   if (fs.existsSync(alt)) return alt;
 
@@ -42,7 +39,6 @@ requireEnv("NEXT_PUBLIC_API_URL");
 const port = parsePort(process.env.PORT, 3000);
 const nextBin = resolveNextBin();
 
-// Запускаем next через node, чтобы не зависеть от .bin/командной строки и не ловить spawn EINVAL на Windows.
 const child = spawn(
   process.execPath,
   [nextBin, "start", "-p", String(port)],

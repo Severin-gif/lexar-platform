@@ -41,8 +41,10 @@ RUN pnpm fetch
 # build: копируем исходники и ставим зависимости оффлайн, затем build
 # ----------------------------
 FROM base AS build
-ARG APP_SCOPE=lexar-front
+ARG APP_SCOPE
+ARG APP_PORT=3000
 ENV APP_SCOPE=$APP_SCOPE
+ENV PORT=$APP_PORT
 
 # Подтягиваем store из deps
 COPY --from=deps /pnpm-store /pnpm-store
@@ -56,13 +58,22 @@ RUN pnpm install --offline --frozen-lockfile --prod=false
 # Чистим старые артефакты Next.js, чтобы исключить рассинхрон HTML/статик
 RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
 
-# Явно генерируем Prisma client для backend (не полагаемся на postinstall)
-RUN pnpm --filter "lexar-backend" prisma:generate
+# Требуем указать, какое приложение собираем
+RUN if [ -z "$APP_SCOPE" ]; then \
+  echo "ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)"; \
+  exit 1; \
+fi
 
-# Сборка выбранного приложения (делает apps/lex-front/.next)
-RUN pnpm --filter "lexar-front" run build \
-&& pnpm --filter "lex-admin" run build \
-&& pnpm --filter "lexar-backend" run build
+# Явно генерируем Prisma client только для backend (не полагаемся на postinstall)
+RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
+  pnpm --filter "lexar-backend" prisma:generate; \
+fi
+
+# Сборка выбранного приложения
+RUN pnpm --filter "$APP_SCOPE" run build
+
+# Гарантируем наличие путей для COPY из build-стадии
+RUN mkdir -p apps/lex-front/.next apps/lex-admin/.next apps/lex-back/dist
 
 # ----------------------------
 # runtime: только prod deps + исходники/артефакты, старт через pnpm filter
@@ -81,8 +92,10 @@ ENV PNPM_STORE_PATH="/pnpm-store"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NPM_CONFIG_OPTIONAL=1
 
-ARG APP_SCOPE=lexar-front
+ARG APP_SCOPE
+ARG APP_PORT=3000
 ENV APP_SCOPE=$APP_SCOPE
+ENV PORT=$APP_PORT
 
 RUN pnpm config set store-dir "$PNPM_STORE_PATH"
 
@@ -95,12 +108,14 @@ COPY apps ./apps
 COPY packages ./packages
 
 # Ставим только прод-зависимости для выбранного приложения
-RUN pnpm install --offline --frozen-lockfile --prod \
-  --filter "lexar-front"... \
-  --filter "lex-admin"... \
-  --filter "lexar-backend"...
+RUN if [ -z "$APP_SCOPE" ]; then \
+  echo "ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)"; \
+  exit 1; \
+fi \
+&& pnpm install --offline --frozen-lockfile --prod \
+  --filter "$APP_SCOPE"...
 
-# Артефакты сборки Next.js должны быть в runtime, иначе next start упадёт
+# Артефакты сборки приложения должны быть в runtime
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
 COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
@@ -108,17 +123,13 @@ COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
 
-EXPOSE 3000 3001
+EXPOSE ${PORT}
 
 CMD ["sh", "-lc", "\
-if [ -n \"$APP_SCOPE\" ]; then \
-  echo \"Starting by APP_SCOPE=$APP_SCOPE\"; \
-  pnpm --filter \"$APP_SCOPE\" start; \
-elif [ -n \"$APP_PATH\" ]; then \
-  echo \"Starting by APP_PATH=$APP_PATH\"; \
-  pnpm --filter \"./$APP_PATH\" start; \
-else \
-  echo \"No APP_SCOPE/APP_PATH provided, fallback to lexar-front\"; \
-  pnpm --filter \"lexar-front\" start; \
-fi \
+if [ -z \"$APP_SCOPE\" ]; then \
+  echo \"ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)\"; \
+  exit 1; \
+fi; \
+echo \"Starting by APP_SCOPE=$APP_SCOPE on PORT=${PORT}\"; \
+pnpm --filter \"$APP_SCOPE\" start; \
 "]

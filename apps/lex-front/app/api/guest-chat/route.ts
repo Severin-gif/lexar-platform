@@ -1,11 +1,11 @@
 // app/api/guest-chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { makeBackendUrl } from "../_config";
+import { makeChatBackendUrl } from "../_config";
 
 const GUEST_CHAT_PATH = "/guest-chat";
 
 export async function POST(req: NextRequest) {
-  const url = makeBackendUrl(GUEST_CHAT_PATH);
+  const url = makeChatBackendUrl(GUEST_CHAT_PATH);
 
   // Диагностика: видно в терминале npm run dev
   console.log("[guest-chat] hit ->", url);
