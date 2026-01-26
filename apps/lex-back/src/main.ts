@@ -4,19 +4,41 @@ import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required env: ${name}`);
+  }
+  return value;
+}
+
+function parseCorsOrigins(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 async function bootstrap() {
+  const databaseUrl = requireEnv("DATABASE_URL");
+  const jwtSecret = requireEnv("JWT_SECRET");
+  const corsRaw = requireEnv("CORS_ORIGIN");
+  const portRaw = requireEnv("PORT");
+  const port = Number(portRaw);
+
+  if (Number.isNaN(port) || port <= 0) {
+    throw new Error(`Invalid PORT value: ${portRaw}`);
+  }
+
+  const corsOrigins = parseCorsOrigins(corsRaw);
+  if (corsOrigins.length === 0) {
+    throw new Error("CORS_ORIGIN must contain at least one origin");
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [
-      "https://test.lexai-chat.com",
-      "https://lexai-chat.com",
-      "https://www.lexai-chat.com",
-      "https://admin.lexai-chat.com",
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-    ],
+    origin: corsOrigins,
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
   });
@@ -30,10 +52,11 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  const port = Number(process.env.PORT) || 3001;
   await app.listen(port, "0.0.0.0");
 
   console.log(`🚀 Backend running on http://0.0.0.0:${port}`);
+  console.log(`✅ Env OK: DATABASE_URL=${databaseUrl ? "set" : "missing"}`);
+  console.log(`✅ Env OK: JWT_SECRET=${jwtSecret ? "set" : "missing"}`);
 }
 
 bootstrap().catch((err) => {
