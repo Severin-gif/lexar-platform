@@ -22,3 +22,11 @@ export function normalizePublicUrl(value: string): string {
 
   return `https://${trimmed.replace(/^\/+/, "")}`.replace(/\/$/, "");
 }
+
+export function buildApiUrl(path: string): string {
+  const base = normalizePublicUrl(
+    process.env.NEXT_PUBLIC_API_URL ?? "https://api.lexai-chat.com",
+  );
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
