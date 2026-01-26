@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
+import "reflect-metadata";
 
 function requireEnv(name: string): string {
   const value = process.env[name];

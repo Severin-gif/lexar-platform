@@ -15,6 +15,7 @@
     "bootstrap:admin": "node dist/scripts/bootstrapAdmin.js"
   },
   "dependencies": {
+    "reflect-metadata": "^0.2.2",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
