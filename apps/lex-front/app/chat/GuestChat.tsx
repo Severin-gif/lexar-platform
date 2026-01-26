@@ -8,6 +8,7 @@ import ChatComposer from "@/components/ChatComposer";
 import SelectionPrompt from "@/components/ui/SelectionPrompt";
 import RegisterNudge from "@/components/RegisterNudge";
 import AuthModal from "@/components/AuthModal";
+import { buildApiUrl } from "@/lib/url";
 
 const STORAGE_MESSAGES_KEY = "guestChatMessages_v1";
 const STORAGE_USER_COUNT_KEY = "guestChatUserCount_v1";
@@ -117,7 +118,7 @@ export default function GuestChat() {
         "Нет ответа. Локально проверь /api/guest-chat (статус/контент-тайп).";
 
       try {
-        const res = await fetch("/api/guest-chat", {
+        const res = await fetch(buildApiUrl("/api/guest-chat"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: payload }),
