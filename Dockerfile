@@ -9,8 +9,8 @@ FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 
 # Ставим зависимости (dev тоже нужны для build)
-COPY package*.json ./
-RUN npm ci --include=dev
+COPY package*.json ./omit
+RUN npm install
 
 # Код
 COPY . .
@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 
 # Зависимости (prod)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Код (нужен для старт-скриптов/next runtime и т.п.)
 COPY . .
