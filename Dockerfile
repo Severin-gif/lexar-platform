@@ -108,18 +108,17 @@ COPY apps ./apps
 COPY packages ./packages
 
 # Ставим только прод-зависимости для выбранного приложения
-RUN if [ -z "$APP_SCOPE" ]; then \
-  echo "ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)"; \
-  exit 1; \
-fi \
-&& pnpm install --offline --frozen-lockfile --prod \
-  --filter "$APP_SCOPE"...
+RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
+pnpm --filter "lexar-backend" prisma:generate; \
+ else \
+ echo "Skip prisma:generate for APP_SCOPE=$APP_SCOPE"; \
+ fi
+
 
 # Артефакты сборки приложения должны быть в runtime
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
 COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store
