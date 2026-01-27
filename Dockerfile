@@ -128,9 +128,12 @@ EXPOSE ${PORT}
 
 CMD ["sh", "-lc", "\
 if [ -z \"$APP_SCOPE\" ]; then \
-  echo \"ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)\"; \
-  exit 1; \
+echo \"ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)\"; exit 1; \
 fi; \
 echo \"Starting by APP_SCOPE=$APP_SCOPE on PORT=${PORT}\"; \
-pnpm --filter \"$APP_SCOPE\" start; \
+if [ \"$APP_SCOPE\" = \"lexar-backend\" ]; then \
+node apps/lex-back/dist/main.js; \
+else \
+echo \"ERROR: runtime CMD is pinned for backend. APP_SCOPE=$APP_SCOPE\"; exit 1; \
+fi \
 "]
