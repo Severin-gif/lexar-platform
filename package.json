@@ -1,24 +1,15 @@
 {
-  "name": "lexar-platform",
+  "name": "lexar-monorepo",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev:back": "pnpm --filter ./apps/lex-back dev",
-    "dev:front": "pnpm --filter ./apps/lex-front dev",
-    "dev:admin": "pnpm --filter ./apps/lex-admin dev",
-    "dev": "pnpm --filter lexar-front dev",
-    "build": "pnpm --filter lexar-front build",
-    "start": "pnpm --filter lexar-front start",
-
-    "build:back": "pnpm --filter ./apps/lex-back build",
-    "build:front": "pnpm --filter ./apps/lex-front build",
-    "build:admin": "pnpm --filter ./apps/lex-admin build",
-
-    "start:back": "pnpm --filter ./apps/lex-back start",
-    "start:front": "pnpm --filter ./apps/lex-front start",
-    "start:admin": "pnpm --filter ./apps/lex-admin start",
-
-    "install:all": "pnpm -r install",
-    "build:all": "pnpm -r build"
+    "build:front": "npm --prefix apps/lex-front run build",
+    "start:front": "npm --prefix apps/lex-front run start",
+    "build:admin": "npm --prefix apps/lex-admin run build",
+    "start:admin": "npm --prefix apps/lex-admin run start",
+    "build:back": "npm --prefix apps/lex-back run build",
+    "start:back": "npm --prefix apps/lex-back run start"
   }
 }
