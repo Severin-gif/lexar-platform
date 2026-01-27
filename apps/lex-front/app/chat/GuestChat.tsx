@@ -119,7 +119,7 @@ export default function GuestChat() {
       setIsTyping(true);
 
       let reply =
-        "Нет ответа. Локально проверь /api/guest-chat (статус/контент-тайп).";
+        "Нет ответа. Локально проверь /guest-chat (статус/контент-тайп).";
 
       try {
         const res = await fetch(buildApiUrl("/guest-chat"), {
@@ -157,7 +157,7 @@ export default function GuestChat() {
         }
       } catch (e: any) {
         const msg = e?.message ?? String(e);
-        reply = `Сбой запроса к /api/guest-chat: ${msg}`;
+        reply = `Сбой запроса к /guest-chat: ${msg}`;
       } finally {
         setIsTyping(false);
       }
