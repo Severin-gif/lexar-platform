@@ -1,60 +1,44 @@
-# Один Dockerfile для трёх приложений монорепо.
-# Выбор приложения: --build-arg APP=lex-chat|lex-admin|lex-back
-# Порт: ENV PORT=3000 (или 3001 для бэка, если так принято)
-
 ARG NODE_VERSION=18
-ARG APP=lex-chat
+ARG APP=lex-back
+
+FROM node:${NODE_VERSION}-alpine AS deps
+WORKDIR /app
+
+# Важно: для npm ci нужен package-lock.json в корне
+COPY package.json package-lock.json ./
+COPY apps ./apps
+
+# Установка зависимостей во всех workspaces по lockfile
+RUN npm ci --include=dev
 
 FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
 
-# Ставим зависимости (dev тоже нужны для build)
-COPY package*.json ./omit
-RUN npm install
+ARG APP=lex-back
+ENV APP=${APP}
 
-# Код
-COPY . .
+COPY --from=deps /app /app
 
-# Сборка выбранного приложения.
-# 1) Если настроены npm workspaces: npm run -w apps/<app> build
-# 2) Фоллбек: npm --prefix apps/<app> run build
-RUN sh -lc 'set -e; \
-  echo "Building APP=${APP}"; \
-  if npm run -w "apps/${APP}" build; then \
-    echo "Workspace build OK"; \
-  else \
-    echo "Workspace build failed, trying --prefix..."; \
-    npm --prefix "apps/${APP}" run build; \
-  fi'
+# Собираем только выбранное приложение
+RUN sh -lc "set -e; cd apps/${APP}; npm run build"
 
 FROM node:${NODE_VERSION}-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production
 
-# Зависимости (prod)
-COPY package*.json ./
-RUN npm install --omit=dev
-
-# Код (нужен для старт-скриптов/next runtime и т.п.)
-COPY . .
-
-# Build-артефакты
-COPY --from=build /app /app
-
-# Выбор приложения и порт задаются переменными окружения
-ARG APP=lex-chat
+ARG APP=lex-back
 ENV APP=${APP}
+ENV NODE_ENV=production
 ENV PORT=3000
+
+# Для рантайма ставим prod-зависимости по lockfile (все workspaces)
+COPY package.json package-lock.json ./
+COPY apps ./apps
+RUN npm ci --omit=dev
+
+# Артефакты сборки (dist/.next) из build-стейджа
+COPY --from=build /app/apps /app/apps
+
 EXPOSE 3000
 
-# Запуск выбранного приложения
-# 1) npm workspaces: npm run -w apps/<app> start
-# 2) fallback: npm --prefix apps/<app> start
-CMD sh -lc 'set -e; \
-  echo "Starting APP=${APP} on PORT=${PORT}"; \
-  if npm run -w "apps/${APP}" start; then \
-    echo "Workspace start OK"; \
-  else \
-    echo "Workspace start failed, trying --prefix..."; \
-    npm --prefix "apps/${APP}" start; \
-  fi'
+# Запуск выбранного приложения из его директории
+CMD sh -lc "set -e; cd apps/${APP}; echo \"Starting ${APP} on PORT=${PORT}\"; npm run start"
