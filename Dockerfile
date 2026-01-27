@@ -1,52 +1,138 @@
 # syntax=docker/dockerfile:1
-FROM node:20-alpine AS build
+
+FROM node:20-slim AS base
 WORKDIR /app
 
+# Базовые зависимости для node/gyp и TLS
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+# pnpm через corepack
 RUN corepack enable
 
-# workspace files
+# Единый store для кеша между стадиями
+ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_PATH="/pnpm-store"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV NPM_CONFIG_OPTIONAL=1
+
+RUN pnpm config set store-dir "$PNPM_STORE_PATH"
+
+# ----------------------------
+# deps: скачиваем зависимости в store (без исходников)
+# ----------------------------
+FROM base AS deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Манифесты приложений (нужны pnpm для корректного разрешения workspace)
+COPY apps/lex-front/package.json apps/lex-front/package.json
+COPY apps/lex-admin/package.json apps/lex-admin/package.json
+COPY apps/lex-back/package.json apps/lex-back/package.json
+
+# workspace packages (если есть)
+COPY packages/*/package.json packages/*/package.json
+
+# Скачиваем всё в store (быстро, кешируется)
+RUN pnpm fetch
+
+# ----------------------------
+# build: копируем исходники и ставим зависимости оффлайн, затем build
+# ----------------------------
+FROM base AS build
+ARG APP_SCOPE
+ARG APP_PORT=3000
+ENV APP_SCOPE=$APP_SCOPE
+ENV PORT=$APP_PORT
+
+# Подтягиваем store из deps
+COPY --from=deps /pnpm-store /pnpm-store
+
+# Копируем весь репозиторий
+COPY . .
+
+# Ставим зависимости оффлайн (строго по lock)
+RUN pnpm install --offline --frozen-lockfile --prod=false
+
+# Чистим старые артефакты Next.js, чтобы исключить рассинхрон HTML/статик
+RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
+
+# Требуем указать, какое приложение собираем
+RUN if [ -z "$APP_SCOPE" ]; then \
+  echo "ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)"; \
+  exit 1; \
+fi
+
+# Явно генерируем Prisma client только для backend (не полагаемся на postinstall)
+RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
+  pnpm --filter "lexar-backend" prisma:generate; \
+fi
+
+# Сборка выбранного приложения
+RUN pnpm --filter "$APP_SCOPE" run build
+
+# Гарантируем наличие путей для COPY из build-стадии
+RUN mkdir -p apps/lex-front/.next apps/lex-admin/.next apps/lex-back/dist
+
+# ----------------------------
+# runtime: только prod deps + исходники/артефакты, старт через pnpm filter
+# ----------------------------
+FROM node:20-slim AS runtime
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
+
+ENV NODE_ENV=production
+ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_PATH="/pnpm-store"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV NPM_CONFIG_OPTIONAL=1
+
+ARG APP_SCOPE
+ARG APP_PORT=3000
+ENV APP_SCOPE=$APP_SCOPE
+ENV PORT=$APP_PORT
+
+RUN pnpm config set store-dir "$PNPM_STORE_PATH"
+
+# store нужен, чтобы поставить prod deps оффлайн
+COPY --from=deps /pnpm-store /pnpm-store
+
+# минимально нужные файлы монорепы
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps ./apps
 COPY packages ./packages
 
-# ставим все зависимости (включая dev) — чтобы prisma/next/tsc точно были доступны
-RUN pnpm install --frozen-lockfile
-
-# на всякий случай чистим старые артефакты next
-RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
-
-# Prisma generate + build backend
-RUN pnpm --filter lexar-backend exec prisma generate
-RUN pnpm --filter lexar-backend run build
-
-# Build Next apps
-RUN pnpm --filter lexar-front run build
-RUN pnpm --filter lexar-admin run build
+# Ставим только прод-зависимости для выбранного приложения
+RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
+pnpm --filter "lexar-backend" prisma:generate; \
+ else \
+ echo "Skip prisma:generate for APP_SCOPE=$APP_SCOPE"; \
+ fi
 
 
-FROM node:20-alpine AS runtime
-WORKDIR /app
-ENV NODE_ENV=production
+# Артефакты сборки приложения должны быть в runtime
+COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
+COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
+COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
 
-# non-root
-RUN addgroup -S nodejs && adduser -S node -G nodejs
+# Чистим store, чтобы уменьшить образ
+RUN rm -rf /pnpm-store
 
-# забираем готовые артефакты и node_modules из build
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps ./apps
-COPY --from=build /app/packages ./packages
+EXPOSE ${PORT}
 
-USER node
-EXPOSE 3000
-
-# Роутинг запуска по APP_SCOPE (ставим в TimeWeb для каждого сервиса)
 CMD ["sh", "-lc", "\
-  echo \"APP_SCOPE=$APP_SCOPE PORT=$PORT\"; \
-  case \"$APP_SCOPE\" in \
-    lexar-backend) node apps/lex-back/dist/main.js ;; \
-    lexar-front) node apps/lex-front/scripts/start.js ;; \
-    lexar-admin) node apps/lex-admin/scripts/start.js ;; \
-    *) echo \"ERROR: APP_SCOPE must be one of: lexar-backend | lexar-front | lexar-admin\"; exit 1 ;; \
-  esac \
+if [ -z \"$APP_SCOPE\" ]; then \
+echo \"ERROR: APP_SCOPE is required (lexar-front | lex-admin | lexar-backend)\"; exit 1; \
+fi; \
+echo \"Starting by APP_SCOPE=$APP_SCOPE on PORT=${PORT}\"; \
+if [ \"$APP_SCOPE\" = \"lexar-backend\" ]; then \
+node apps/lex-back/dist/main.js; \
+else \
+echo \"ERROR: runtime CMD is pinned for backend. APP_SCOPE=$APP_SCOPE\"; exit 1; \
+fi \
 "]
