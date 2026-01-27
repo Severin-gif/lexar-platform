@@ -119,6 +119,7 @@ fi \
 COPY --from=build /app/apps/lex-front/.next ./apps/lex-front/.next
 COPY --from=build /app/apps/lex-admin/.next ./apps/lex-admin/.next
 COPY --from=build /app/apps/lex-back/dist ./apps/lex-back/dist
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
 # Чистим store, чтобы уменьшить образ
 RUN rm -rf /pnpm-store

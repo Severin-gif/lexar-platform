@@ -21,6 +21,10 @@ function isJsonContentType(ct: string | null) {
   return !!ct && ct.toLowerCase().includes("application/json");
 }
 
+function isHtmlContentType(ct: string | null) {
+  return !!ct && ct.toLowerCase().includes("text/html");
+}
+
 async function safeReadText(res: Response, limit = 600) {
   try {
     const t = await res.text();
@@ -115,10 +119,10 @@ export default function GuestChat() {
       setIsTyping(true);
 
       let reply =
-        "Нет ответа. Локально проверь /api/guest-chat (статус/контент-тайп).";
+        "Нет ответа. Локально проверь /guest-chat (статус/контент-тайп).";
 
       try {
-        const res = await fetch(buildApiUrl("/api/guest-chat"), {
+        const res = await fetch(buildApiUrl("/guest-chat"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: payload }),
@@ -132,6 +136,8 @@ export default function GuestChat() {
             const err = (await res.json()) as GuestChatApiErr;
             const msg = err?.details || err?.error || "Unknown error";
             reply = `Ошибка API: ${res.status}. ${msg}`;
+          } else if (isHtmlContentType(ct)) {
+            reply = `Ошибка API: ${res.status}. Ответ HTML получен вместо JSON.`;
           } else {
             const text = await safeReadText(res);
             reply = `Ошибка API: ${res.status}. Ответ не JSON (${ct ?? "no content-type"}). ${text ? `Тело: ${text}` : ""}`.trim();
@@ -142,6 +148,8 @@ export default function GuestChat() {
             const data = (await res.json()) as GuestChatApiOk;
             if (data?.reply) reply = data.reply;
             else reply = "Пустой ответ от API (нет поля reply).";
+          } else if (isHtmlContentType(ct)) {
+            reply = `OK, но ответ HTML получен вместо JSON.`;
           } else {
             const text = await safeReadText(res);
             reply = `OK, но ответ не JSON (${ct ?? "no content-type"}). ${text ? `Тело: ${text}` : ""}`.trim();
@@ -149,7 +157,7 @@ export default function GuestChat() {
         }
       } catch (e: any) {
         const msg = e?.message ?? String(e);
-        reply = `Сбой запроса к /api/guest-chat: ${msg}`;
+        reply = `Сбой запроса к /guest-chat: ${msg}`;
       } finally {
         setIsTyping(false);
       }
