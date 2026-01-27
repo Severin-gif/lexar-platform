@@ -42,7 +42,7 @@ RUN pnpm fetch
 # ----------------------------
 FROM base AS build
 ARG APP_SCOPE
-ARG APP_PORT=3000
+ARG APP_PORT=3001
 ENV APP_SCOPE=$APP_SCOPE
 ENV PORT=$APP_PORT
 
@@ -93,7 +93,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV NPM_CONFIG_OPTIONAL=1
 
 ARG APP_SCOPE
-ARG APP_PORT=3000
+ARG APP_PORT=3001
 ENV APP_SCOPE=$APP_SCOPE
 ENV PORT=$APP_PORT
 
@@ -108,6 +108,13 @@ COPY apps ./apps
 COPY packages ./packages
 
 # Ставим только прод-зависимости для выбранного приложения
+# Ставим prod-зависимости (иначе node dist/main.js падает без node_modules)
+RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
+pnpm --filter "lexar-backend" install --prod --offline --frozen-lockfile; \
+else \
+echo "Skip install for APP_SCOPE=$APP_SCOPE"; \
+fi
+
 RUN if [ "$APP_SCOPE" = "lexar-backend" ]; then \
 pnpm --filter "lexar-backend" prisma:generate; \
  else \
