@@ -1,61 +1,52 @@
-# ---------- base ----------
-FROM node:20-slim AS base
+# syntax=docker/dockerfile:1
+FROM node:20-alpine AS build
 WORKDIR /app
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
-
-# ---------- deps ----------
-FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/lex-front/package.json apps/lex-front/package.json
-COPY apps/lex-admin/package.json apps/lex-admin/package.json
-COPY apps/lex-back/package.json  apps/lex-back/package.json
+# workspace files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps ./apps
 COPY packages ./packages
+
+# ставим все зависимости (включая dev) — чтобы prisma/next/tsc точно были доступны
 RUN pnpm install --frozen-lockfile
 
-# ---------- build ----------
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# на всякий случай чистим старые артефакты next
+RUN rm -rf apps/lex-front/.next apps/lex-admin/.next
 
-# Prisma client (важно: ДО tsc build)
-RUN pnpm -C apps/lex-back prisma:generate
+# Prisma generate + build backend
+RUN pnpm --filter lexar-backend exec prisma generate
+RUN pnpm --filter lexar-backend run build
 
-# Build all apps (Timeweb-friendly)
-RUN pnpm --filter lexar-front build
-RUN pnpm --filter lex-admin build
-RUN pnpm --filter lexar-backend build
+# Build Next apps
+RUN pnpm --filter lexar-front run build
+RUN pnpm --filter lexar-admin run build
 
-# ---------- runtime ----------
-FROM base AS runtime
+
+FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# non-root
+RUN addgroup -S nodejs && adduser -S node -G nodejs
+
+# забираем готовые артефакты и node_modules из build
+COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps ./apps
 COPY --from=build /app/packages ./packages
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=build /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
-EXPOSE 3000 3001
+USER node
+EXPOSE 3000
 
-CMD ["bash", "-lc", "\
+# Роутинг запуска по APP_SCOPE (ставим в TimeWeb для каждого сервиса)
+CMD ["sh", "-lc", "\
+  echo \"APP_SCOPE=$APP_SCOPE PORT=$PORT\"; \
   case \"$APP_SCOPE\" in \
-    lexar-front) \
-      echo \"Starting lexar-front\"; \
-      cd /app/apps/lex-front && node scripts/start.js ;; \
-    lex-admin) \
-      echo \"Starting lex-admin\"; \
-      cd /app/apps/lex-admin && node scripts/start.js ;; \
-    lexar-backend) \
-      echo \"Starting lexar-backend\"; \
-      cd /app/apps/lex-back && node dist/main.js ;; \
-    *) \
-      echo \"ERROR: APP_SCOPE must be one of: lexar-front | lex-admin | lexar-backend\"; \
-      exit 1 ;; \
+    lexar-backend) node apps/lex-back/dist/main.js ;; \
+    lexar-front) node apps/lex-front/scripts/start.js ;; \
+    lexar-admin) node apps/lex-admin/scripts/start.js ;; \
+    *) echo \"ERROR: APP_SCOPE must be one of: lexar-backend | lexar-front | lexar-admin\"; exit 1 ;; \
   esac \
 "]
